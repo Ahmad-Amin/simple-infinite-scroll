@@ -1,0 +1,22 @@
+{
+  "name": "infinite-scroll",
+  "version": "1.0.0",
+  "description": "Create the effect of the infinite scroll using debounce effectand fetch fresh records one user scrolls down to the bottom",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "InfinteScroll"
+  ],
+  "author": "DevTech-Ahmad",
+  "license": "ISC",
+  "peerDependencies": {
+    "axios": "^1.6.8",
+    "lodash": "^4.17.21",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.1"
+  }
+}
