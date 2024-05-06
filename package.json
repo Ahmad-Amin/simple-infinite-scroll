@@ -1,6 +1,6 @@
 {
   "name": "use-component-infinite-scroll",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Create the effect of the infinite scroll using debounce effect and fetch fresh records once a user scrolls down to the bottom",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

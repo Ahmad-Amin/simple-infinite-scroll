@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -51,25 +62,28 @@ var axios_1 = require("axios");
 var lodash_1 = require("lodash");
 function useInfiniteScroll(_a) {
     var _this = this;
-    var url = _a.url, _b = _a.limit, limit = _b === void 0 ? 10 : _b, _c = _a.initialData, initialData = _c === void 0 ? [] : _c, dependency = _a.dependency, searchQuery = _a.searchQuery, _d = _a.debounceDelay, debounceDelay = _d === void 0 ? 500 : _d;
-    var _e = (0, react_1.useState)(false), loading = _e[0], setLoading = _e[1];
-    var _f = (0, react_1.useState)(1), page = _f[0], setPage = _f[1];
-    var _g = (0, react_1.useState)(1), totalPages = _g[0], setTotalPages = _g[1];
-    var _h = (0, react_1.useState)(initialData), data = _h[0], setData = _h[1];
-    var _j = (0, react_1.useState)(null), error = _j[0], setError = _j[1]; // New state for error handling
+    var url = _a.url, _b = _a.limit, limit = _b === void 0 ? 10 : _b, _c = _a.initialData, initialData = _c === void 0 ? [] : _c, dependency = _a.dependency, searchQuery = _a.searchQuery, _d = _a.debounceDelay, debounceDelay = _d === void 0 ? 500 : _d, authToken = _a.authToken, _e = _a.headers, headers = _e === void 0 ? {} : _e;
+    var _f = (0, react_1.useState)(false), loading = _f[0], setLoading = _f[1];
+    var _g = (0, react_1.useState)(1), page = _g[0], setPage = _g[1];
+    var _h = (0, react_1.useState)(1), totalPages = _h[0], setTotalPages = _h[1];
+    var _j = (0, react_1.useState)(initialData), data = _j[0], setData = _j[1];
+    var _k = (0, react_1.useState)(null), error = _k[0], setError = _k[1]; // New state for error handling
     var listRef = (0, react_1.useRef)(null);
     var debouncedFetchData = (0, react_1.useRef)((0, lodash_1.debounce)(function (query, url) { return __awaiter(_this, void 0, void 0, function () {
-        var response_1, error_1;
+        var requestHeaders, response_1, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     if (loading)
                         return [2 /*return*/];
+                    requestHeaders = __assign(__assign({}, headers), { Authorization: authToken ? "Bearer ".concat(authToken) : "" });
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, 4, 5]);
                     setLoading(true);
-                    return [4 /*yield*/, axios_1.default.get("".concat(url, "?page=").concat(page, "&limit=").concat(limit, "&search=").concat(query))];
+                    return [4 /*yield*/, axios_1.default.get("".concat(url, "?page=").concat(page, "&limit=").concat(limit, "&search=").concat(query), {
+                            headers: requestHeaders
+                        })];
                 case 2:
                     response_1 = _a.sent();
                     if (response_1.status === 200) {
@@ -83,13 +97,13 @@ function useInfiniteScroll(_a) {
                     }
                     else {
                         console.error("Fetch error:", response_1);
-                        setError("Failed to fetch data."); // Setting error state
+                        setError("Failed to fetch data.");
                     }
                     return [3 /*break*/, 5];
                 case 3:
                     error_1 = _a.sent();
                     console.error("Fetch error:", error_1);
-                    setError("Failed to fetch data."); // Setting error state
+                    setError("Failed to fetch data.");
                     return [3 /*break*/, 5];
                 case 4:
                     setLoading(false);
