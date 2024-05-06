@@ -1,13 +1,15 @@
 {
   "name": "use-component-infinite-scroll",
   "version": "1.0.0",
-  "description": "Create the effect of the infinite scroll using debounce effectand fetch fresh records one user scrolls down to the bottom",
-  "main": "index.js",
+  "description": "Create the effect of the infinite scroll using debounce effect and fetch fresh records once a user scrolls down to the bottom",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "InfinteScroll"
+    "infiniteScroll", "react", "debounce", "scroll", "axios"
   ],
   "author": "DevTech-Ahmad",
   "license": "ISC",
@@ -17,6 +19,10 @@
     "react": "^18.3.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.1"
+    "@types/lodash": "^4.17.1",
+    "typescript": "^4.0.5",
+    "axios": "^1.6.8",
+    "lodash": "^4.17.21",
+    "react": "^18.3.1"
   }
 }
