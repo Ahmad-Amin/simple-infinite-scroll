@@ -15,7 +15,9 @@ interface UseInfiniteScrollProps<T> {
   initialData?: T[];
   dependency: any;
   searchQuery?: string;
-  debounceDelay?: number;  // New optional parameter for debounce timing
+  debounceDelay?: number;
+  authToken?: string;
+  headers?: Record<string, string>;
 }
 
 export function useInfiniteScroll<T>({
@@ -24,7 +26,9 @@ export function useInfiniteScroll<T>({
   initialData = [],
   dependency,
   searchQuery,
-  debounceDelay = 500,  // Default set here, customizable via props
+  debounceDelay = 500,
+  authToken,
+  headers = {},
 }: UseInfiniteScrollProps<T>) {
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
@@ -36,11 +40,18 @@ export function useInfiniteScroll<T>({
   const debouncedFetchData = useRef(
     debounce(async (query: string, url: string) => {
       if (loading) return;
+
+      const requestHeaders = {
+        ...headers,
+        Authorization: authToken ? `Bearer ${authToken}` : "",
+      };
+
       try {
         setLoading(true);
         const response = await axios.get<PaginationResponse<T>>(
-          `${url}?page=${page}&limit=${limit}&search=${query}`
-        );
+          `${url}?page=${page}&limit=${limit}&search=${query}`, {
+          headers: requestHeaders
+        });
         if (response.status === 200) {
           if (page === 1) {
             setData(response.data.results);
@@ -50,11 +61,11 @@ export function useInfiniteScroll<T>({
           setTotalPages(response.data.pagination.totalPages);
         } else {
           console.error("Fetch error:", response);
-          setError("Failed to fetch data.");  // Setting error state
+          setError("Failed to fetch data."); 
         }
       } catch (error) {
         console.error("Fetch error:", error);
-        setError("Failed to fetch data.");  // Setting error state
+        setError("Failed to fetch data."); 
       } finally {
         setLoading(false);
       }
