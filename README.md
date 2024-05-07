@@ -26,7 +26,7 @@ Below is the basic example to demonstrate how to use the `useInfiniteScroll` hoo
 
 ```bash
 import React, { useEffect } from 'react'
-import { useInfiniteScroll } from  'path-to-useInfiniteScroll-hook';
+import { useInfiniteScroll } from  'use-component-infinite-scroll';
 
 const App = () => {
   const fetchUrl = "https://api.example.com/data"
