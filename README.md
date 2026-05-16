@@ -1,4 +1,10 @@
 # useInfiniteScroll Hook
+
+[![npm version](https://img.shields.io/npm/v/use-component-infinite-scroll)](https://www.npmjs.com/package/use-component-infinite-scroll)
+[![npm downloads](https://img.shields.io/npm/dm/use-component-infinite-scroll)](https://www.npmjs.com/package/use-component-infinite-scroll)
+[![license](https://img.shields.io/npm/l/use-component-infinite-scroll)](https://github.com/Ahmad-Amin/simple-infinite-scroll/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-supported-blue)](https://www.typescriptlang.org/)
+[![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/use-component-infinite-scroll)
 `useInfiniteScroll` is a custom React hook that simplifies the implementation of infinite scrolling functionality in React applications. It has **zero external dependencies** — it uses the native `fetch` API and a built-in debounce. It supports authenticated and unauthenticated requests, custom headers, search queries, and automatic pagination.
 
 ## Features

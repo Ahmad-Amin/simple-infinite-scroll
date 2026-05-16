@@ -17,12 +17,19 @@
     "url": "https://github.com/Ahmad-Amin/simple-infinite-scroll"
   },
   "keywords": [
-    "infiniteScroll",
+    "infinite-scroll",
+    "infinite scroll",
     "react",
+    "react hook",
+    "useInfiniteScroll",
     "debounce",
     "scroll",
     "pagination",
-    "hook"
+    "lazy loading",
+    "virtual scroll",
+    "react pagination",
+    "fetch on scroll",
+    "typescript"
   ],
   "author": "DevTech-Ahmad",
   "license": "ISC",
