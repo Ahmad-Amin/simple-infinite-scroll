@@ -1,6 +1,6 @@
 {
   "name": "use-component-infinite-scroll",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A React hook for infinite scrolling with built-in debounce, pagination, search, and authentication support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
