@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
-import { debounce } from "lodash";
 
 type PaginationResponse<T> = {
   results: T[];
@@ -20,6 +18,16 @@ interface UseInfiniteScrollProps<T> {
   headers?: Record<string, string>;
 }
 
+function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+  let timer: ReturnType<typeof setTimeout>;
+  const debounced = (...args: Parameters<T>) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+  debounced.cancel = () => clearTimeout(timer);
+  return debounced;
+}
+
 export function useInfiniteScroll<T>({
   url,
   limit = 10,
@@ -37,7 +45,6 @@ export function useInfiniteScroll<T>({
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  // Refs so the stable debounced closure always reads current values
   const loadingRef = useRef(false);
   const pageRef = useRef(1);
 
@@ -47,6 +54,7 @@ export function useInfiniteScroll<T>({
     if (loadingRef.current) return;
 
     const requestHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
       ...headers,
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
@@ -55,16 +63,20 @@ export function useInfiniteScroll<T>({
     setLoading(true);
 
     try {
-      const response = await axios.get<PaginationResponse<T>>(
+      const response = await fetch(
         `${fetchUrl}?page=${currentPage}&limit=${limit}&search=${query}`,
         { headers: requestHeaders }
       );
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const json: PaginationResponse<T> = await response.json();
       setData((prev) =>
-        currentPage === 1
-          ? response.data.results
-          : [...prev, ...response.data.results]
+        currentPage === 1 ? json.results : [...prev, ...json.results]
       );
-      setTotalPages(response.data.pagination.totalPages);
+      setTotalPages(json.pagination.totalPages);
       setError(null);
     } catch (err) {
       console.error("Fetch error:", err);

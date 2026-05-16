@@ -1,18 +1,14 @@
 # useInfiniteScroll Hook
-`useInfiniteScroll` is a custom React hook that simplifies the implementation of infinite scrolling functionality in React applications. This hook uses `Axios` for fetching data and `Lodash`'s debounce to efficiently manage API request frequency. It supports authenticated and unauthenticated requests, custom headers, search queries, and automatic pagination.
+`useInfiniteScroll` is a custom React hook that simplifies the implementation of infinite scrolling functionality in React applications. It has **zero external dependencies** — it uses the native `fetch` API and a built-in debounce. It supports authenticated and unauthenticated requests, custom headers, search queries, and automatic pagination.
 
 ## Features
 - **Infinite Scrolling**: Automatically loads new data as the user scrolls, improving user experience in content-heavy applications
-- **Debounced API Requests**: Uses Lodash's debounce to control the rate of API requests, reducing server calls under rapid scroll conditions and supporting search functionality
+- **Debounced Requests**: Built-in debounce controls the rate of API requests, reducing server calls under rapid scroll conditions and supporting search functionality
+- **Zero External Dependencies**: Uses native `fetch` — no axios or lodash required
 - **Flexible API Request Configuration**: Handles custom headers and authentication tokens, accommodating both public and secured APIs
 - **Pagination and Error Handling**: Manages pagination seamlessly and provides built-in error handling with automatic reset on search/dependency changes
 
 ## Installation
-Make sure you have `axios` and `lodash` installed in your project. If not, install them:
-```bash
-npm install axios lodash
-```
-Then install the package:
 ```bash
 npm install use-component-infinite-scroll
 ```

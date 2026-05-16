@@ -58,8 +58,19 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useInfiniteScroll = void 0;
 var react_1 = require("react");
-var axios_1 = require("axios");
-var lodash_1 = require("lodash");
+function debounce(fn, delay) {
+    var timer;
+    var debounced = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        clearTimeout(timer);
+        timer = setTimeout(function () { return fn.apply(void 0, args); }, delay);
+    };
+    debounced.cancel = function () { return clearTimeout(timer); };
+    return debounced;
+}
 function useInfiniteScroll(_a) {
     var _this = this;
     var url = _a.url, _b = _a.limit, limit = _b === void 0 ? 10 : _b, _c = _a.initialData, initialData = _c === void 0 ? [] : _c, dependency = _a.dependency, _d = _a.searchQuery, searchQuery = _d === void 0 ? "" : _d, _e = _a.debounceDelay, debounceDelay = _e === void 0 ? 500 : _e, authToken = _a.authToken, _f = _a.headers, headers = _f === void 0 ? {} : _f;
@@ -69,50 +80,53 @@ function useInfiniteScroll(_a) {
     var _k = (0, react_1.useState)(initialData), data = _k[0], setData = _k[1];
     var _l = (0, react_1.useState)(null), error = _l[0], setError = _l[1];
     var listRef = (0, react_1.useRef)(null);
-    // Refs so the stable debounced closure always reads current values
     var loadingRef = (0, react_1.useRef)(false);
     var pageRef = (0, react_1.useRef)(1);
     // Always-fresh fetch implementation; called through the stable debounced wrapper
     var fetchImplRef = (0, react_1.useRef)();
     fetchImplRef.current = function (query, fetchUrl, currentPage) { return __awaiter(_this, void 0, void 0, function () {
-        var requestHeaders, response_1, err_1;
+        var requestHeaders, response, json_1, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     if (loadingRef.current)
                         return [2 /*return*/];
-                    requestHeaders = __assign(__assign({}, headers), (authToken ? { Authorization: "Bearer ".concat(authToken) } : {}));
+                    requestHeaders = __assign(__assign({ "Content-Type": "application/json" }, headers), (authToken ? { Authorization: "Bearer ".concat(authToken) } : {}));
                     loadingRef.current = true;
                     setLoading(true);
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 3, 4, 5]);
-                    return [4 /*yield*/, axios_1.default.get("".concat(fetchUrl, "?page=").concat(currentPage, "&limit=").concat(limit, "&search=").concat(query), { headers: requestHeaders })];
+                    _a.trys.push([1, 4, 5, 6]);
+                    return [4 /*yield*/, fetch("".concat(fetchUrl, "?page=").concat(currentPage, "&limit=").concat(limit, "&search=").concat(query), { headers: requestHeaders })];
                 case 2:
-                    response_1 = _a.sent();
-                    setData(function (prev) {
-                        return currentPage === 1
-                            ? response_1.data.results
-                            : __spreadArray(__spreadArray([], prev, true), response_1.data.results, true);
-                    });
-                    setTotalPages(response_1.data.pagination.totalPages);
-                    setError(null);
-                    return [3 /*break*/, 5];
+                    response = _a.sent();
+                    if (!response.ok) {
+                        throw new Error("Request failed with status ".concat(response.status));
+                    }
+                    return [4 /*yield*/, response.json()];
                 case 3:
+                    json_1 = _a.sent();
+                    setData(function (prev) {
+                        return currentPage === 1 ? json_1.results : __spreadArray(__spreadArray([], prev, true), json_1.results, true);
+                    });
+                    setTotalPages(json_1.pagination.totalPages);
+                    setError(null);
+                    return [3 /*break*/, 6];
+                case 4:
                     err_1 = _a.sent();
                     console.error("Fetch error:", err_1);
                     setError("Failed to fetch data.");
-                    return [3 /*break*/, 5];
-                case 4:
+                    return [3 /*break*/, 6];
+                case 5:
                     loadingRef.current = false;
                     setLoading(false);
                     return [7 /*endfinally*/];
-                case 5: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     }); };
     // Stable debounced trigger — never recreated so debounce state is preserved across renders
-    var debouncedFetch = (0, react_1.useRef)((0, lodash_1.debounce)(function (query, fetchUrl, currentPage) {
+    var debouncedFetch = (0, react_1.useRef)(debounce(function (query, fetchUrl, currentPage) {
         var _a;
         (_a = fetchImplRef.current) === null || _a === void 0 ? void 0 : _a.call(fetchImplRef, query, fetchUrl, currentPage);
     }, debounceDelay));
