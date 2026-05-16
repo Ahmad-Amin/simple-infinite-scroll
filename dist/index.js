@@ -62,74 +62,94 @@ var axios_1 = require("axios");
 var lodash_1 = require("lodash");
 function useInfiniteScroll(_a) {
     var _this = this;
-    var url = _a.url, _b = _a.limit, limit = _b === void 0 ? 10 : _b, _c = _a.initialData, initialData = _c === void 0 ? [] : _c, dependency = _a.dependency, searchQuery = _a.searchQuery, _d = _a.debounceDelay, debounceDelay = _d === void 0 ? 500 : _d, authToken = _a.authToken, _e = _a.headers, headers = _e === void 0 ? {} : _e;
-    var _f = (0, react_1.useState)(false), loading = _f[0], setLoading = _f[1];
-    var _g = (0, react_1.useState)(1), page = _g[0], setPage = _g[1];
-    var _h = (0, react_1.useState)(1), totalPages = _h[0], setTotalPages = _h[1];
-    var _j = (0, react_1.useState)(initialData), data = _j[0], setData = _j[1];
-    var _k = (0, react_1.useState)(null), error = _k[0], setError = _k[1]; // New state for error handling
+    var url = _a.url, _b = _a.limit, limit = _b === void 0 ? 10 : _b, _c = _a.initialData, initialData = _c === void 0 ? [] : _c, dependency = _a.dependency, _d = _a.searchQuery, searchQuery = _d === void 0 ? "" : _d, _e = _a.debounceDelay, debounceDelay = _e === void 0 ? 500 : _e, authToken = _a.authToken, _f = _a.headers, headers = _f === void 0 ? {} : _f;
+    var _g = (0, react_1.useState)(false), loading = _g[0], setLoading = _g[1];
+    var _h = (0, react_1.useState)(1), page = _h[0], setPage = _h[1];
+    var _j = (0, react_1.useState)(1), totalPages = _j[0], setTotalPages = _j[1];
+    var _k = (0, react_1.useState)(initialData), data = _k[0], setData = _k[1];
+    var _l = (0, react_1.useState)(null), error = _l[0], setError = _l[1];
     var listRef = (0, react_1.useRef)(null);
-    var debouncedFetchData = (0, react_1.useRef)((0, lodash_1.debounce)(function (query, url) { return __awaiter(_this, void 0, void 0, function () {
-        var requestHeaders, response_1, error_1;
+    // Refs so the stable debounced closure always reads current values
+    var loadingRef = (0, react_1.useRef)(false);
+    var pageRef = (0, react_1.useRef)(1);
+    // Always-fresh fetch implementation; called through the stable debounced wrapper
+    var fetchImplRef = (0, react_1.useRef)();
+    fetchImplRef.current = function (query, fetchUrl, currentPage) { return __awaiter(_this, void 0, void 0, function () {
+        var requestHeaders, response_1, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (loading)
+                    if (loadingRef.current)
                         return [2 /*return*/];
-                    requestHeaders = __assign(__assign({}, headers), { Authorization: authToken ? "Bearer ".concat(authToken) : "" });
+                    requestHeaders = __assign(__assign({}, headers), (authToken ? { Authorization: "Bearer ".concat(authToken) } : {}));
+                    loadingRef.current = true;
+                    setLoading(true);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, 4, 5]);
-                    setLoading(true);
-                    return [4 /*yield*/, axios_1.default.get("".concat(url, "?page=").concat(page, "&limit=").concat(limit, "&search=").concat(query), {
-                            headers: requestHeaders
-                        })];
+                    return [4 /*yield*/, axios_1.default.get("".concat(fetchUrl, "?page=").concat(currentPage, "&limit=").concat(limit, "&search=").concat(query), { headers: requestHeaders })];
                 case 2:
                     response_1 = _a.sent();
-                    if (response_1.status === 200) {
-                        if (page === 1) {
-                            setData(response_1.data.results);
-                        }
-                        else {
-                            setData(function (prevData) { return __spreadArray(__spreadArray([], prevData, true), response_1.data.results, true); });
-                        }
-                        setTotalPages(response_1.data.pagination.totalPages);
-                    }
-                    else {
-                        console.error("Fetch error:", response_1);
-                        setError("Failed to fetch data.");
-                    }
+                    setData(function (prev) {
+                        return currentPage === 1
+                            ? response_1.data.results
+                            : __spreadArray(__spreadArray([], prev, true), response_1.data.results, true);
+                    });
+                    setTotalPages(response_1.data.pagination.totalPages);
+                    setError(null);
                     return [3 /*break*/, 5];
                 case 3:
-                    error_1 = _a.sent();
-                    console.error("Fetch error:", error_1);
+                    err_1 = _a.sent();
+                    console.error("Fetch error:", err_1);
                     setError("Failed to fetch data.");
                     return [3 /*break*/, 5];
                 case 4:
+                    loadingRef.current = false;
                     setLoading(false);
                     return [7 /*endfinally*/];
                 case 5: return [2 /*return*/];
             }
         });
-    }); }, debounceDelay));
-    var fetchData = (0, react_1.useCallback)(function (query, url) {
-        if (!query)
-            query = searchQuery;
-        debouncedFetchData.current(query, url);
-    }, [searchQuery, debouncedFetchData]);
+    }); };
+    // Stable debounced trigger — never recreated so debounce state is preserved across renders
+    var debouncedFetch = (0, react_1.useRef)((0, lodash_1.debounce)(function (query, fetchUrl, currentPage) {
+        var _a;
+        (_a = fetchImplRef.current) === null || _a === void 0 ? void 0 : _a.call(fetchImplRef, query, fetchUrl, currentPage);
+    }, debounceDelay));
+    // Cancel any pending debounced call on unmount
     (0, react_1.useEffect)(function () {
-        fetchData();
-    }, [fetchData, dependency, page]); // Ensure 'page' is a dependency
+        var d = debouncedFetch.current;
+        return function () { return d.cancel(); };
+    }, []);
+    var fetchData = (0, react_1.useCallback)(function (query, fetchUrl) {
+        debouncedFetch.current(query !== null && query !== void 0 ? query : searchQuery, fetchUrl !== null && fetchUrl !== void 0 ? fetchUrl : url, pageRef.current);
+    }, [searchQuery, url]);
+    // Reset and re-fetch from page 1 when the data source changes
+    (0, react_1.useEffect)(function () {
+        pageRef.current = 1;
+        setPage(1);
+        setData([]);
+        setError(null);
+        debouncedFetch.current(searchQuery, url, 1);
+    }, [dependency, searchQuery, url]);
+    // Fetch subsequent pages as the user scrolls (page > 1 only; page 1 handled above)
+    (0, react_1.useEffect)(function () {
+        if (page <= 1)
+            return;
+        pageRef.current = page;
+        debouncedFetch.current(searchQuery, url, page);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]);
     var handleScroll = (0, react_1.useCallback)(function () {
-        if (loading || page >= totalPages)
+        if (loadingRef.current || page >= totalPages)
             return;
         if (listRef.current) {
             var _a = listRef.current, scrollTop = _a.scrollTop, scrollHeight = _a.scrollHeight, clientHeight = _a.clientHeight;
             if (scrollHeight - scrollTop <= clientHeight * 1.1) {
-                setPage(function (prevPage) { return prevPage + 1; });
+                setPage(function (prev) { return prev + 1; });
             }
         }
-    }, [loading, page, totalPages]);
+    }, [page, totalPages]);
     return { listRef: listRef, data: data, loading: loading, error: error, handleScroll: handleScroll, fetchData: fetchData };
 }
 exports.useInfiniteScroll = useInfiniteScroll;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import axios from 'axios'
+import axios from "axios";
 import { debounce } from "lodash";
 
 type PaginationResponse<T> = {
@@ -13,7 +13,7 @@ interface UseInfiniteScrollProps<T> {
   url: string;
   limit?: number;
   initialData?: T[];
-  dependency: any;
+  dependency?: any;
   searchQuery?: string;
   debounceDelay?: number;
   authToken?: string;
@@ -25,75 +25,106 @@ export function useInfiniteScroll<T>({
   limit = 10,
   initialData = [],
   dependency,
-  searchQuery,
+  searchQuery = "",
   debounceDelay = 500,
   authToken,
   headers = {},
 }: UseInfiniteScrollProps<T>) {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [page, setPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [data, setData] = useState<T[]>(initialData);
-  const [error, setError] = useState<string | null>(null);  // New state for error handling
+  const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  const debouncedFetchData = useRef(
-    debounce(async (query: string, url: string) => {
-      if (loading) return;
+  // Refs so the stable debounced closure always reads current values
+  const loadingRef = useRef(false);
+  const pageRef = useRef(1);
 
-      const requestHeaders = {
-        ...headers,
-        Authorization: authToken ? `Bearer ${authToken}` : "",
-      };
+  // Always-fresh fetch implementation; called through the stable debounced wrapper
+  const fetchImplRef = useRef<(query: string, fetchUrl: string, currentPage: number) => Promise<void>>();
+  fetchImplRef.current = async (query: string, fetchUrl: string, currentPage: number) => {
+    if (loadingRef.current) return;
 
-      try {
-        setLoading(true);
-        const response = await axios.get<PaginationResponse<T>>(
-          `${url}?page=${page}&limit=${limit}&search=${query}`, {
-          headers: requestHeaders
-        });
-        if (response.status === 200) {
-          if (page === 1) {
-            setData(response.data.results);
-          } else {
-            setData((prevData) => [...prevData, ...response.data.results]);
-          }
-          setTotalPages(response.data.pagination.totalPages);
-        } else {
-          console.error("Fetch error:", response);
-          setError("Failed to fetch data."); 
-        }
-      } catch (error) {
-        console.error("Fetch error:", error);
-        setError("Failed to fetch data."); 
-      } finally {
-        setLoading(false);
-      }
+    const requestHeaders: Record<string, string> = {
+      ...headers,
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    loadingRef.current = true;
+    setLoading(true);
+
+    try {
+      const response = await axios.get<PaginationResponse<T>>(
+        `${fetchUrl}?page=${currentPage}&limit=${limit}&search=${query}`,
+        { headers: requestHeaders }
+      );
+      setData((prev) =>
+        currentPage === 1
+          ? response.data.results
+          : [...prev, ...response.data.results]
+      );
+      setTotalPages(response.data.pagination.totalPages);
+      setError(null);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Failed to fetch data.");
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  };
+
+  // Stable debounced trigger — never recreated so debounce state is preserved across renders
+  const debouncedFetch = useRef(
+    debounce((query: string, fetchUrl: string, currentPage: number) => {
+      fetchImplRef.current?.(query, fetchUrl, currentPage);
     }, debounceDelay)
   );
 
+  // Cancel any pending debounced call on unmount
+  useEffect(() => {
+    const d = debouncedFetch.current;
+    return () => d.cancel();
+  }, []);
+
   const fetchData = useCallback(
-    (query?: string, url?: string) => {
-      if (!query) query = searchQuery;
-      debouncedFetchData.current(query as string, url as string);
+    (query?: string, fetchUrl?: string) => {
+      debouncedFetch.current(
+        query ?? searchQuery,
+        fetchUrl ?? url,
+        pageRef.current
+      );
     },
-    [searchQuery, debouncedFetchData]
+    [searchQuery, url]
   );
 
+  // Reset and re-fetch from page 1 when the data source changes
   useEffect(() => {
-    fetchData();
-  }, [fetchData, dependency, page]);  // Ensure 'page' is a dependency
+    pageRef.current = 1;
+    setPage(1);
+    setData([]);
+    setError(null);
+    debouncedFetch.current(searchQuery, url, 1);
+  }, [dependency, searchQuery, url]);
+
+  // Fetch subsequent pages as the user scrolls (page > 1 only; page 1 handled above)
+  useEffect(() => {
+    if (page <= 1) return;
+    pageRef.current = page;
+    debouncedFetch.current(searchQuery, url, page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const handleScroll = useCallback(() => {
-    if (loading || page >= totalPages) return;
-
+    if (loadingRef.current || page >= totalPages) return;
     if (listRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = listRef.current;
       if (scrollHeight - scrollTop <= clientHeight * 1.1) {
-        setPage((prevPage) => prevPage + 1);
+        setPage((prev) => prev + 1);
       }
     }
-  }, [loading, page, totalPages]);
+  }, [page, totalPages]);
 
   return { listRef, data, loading, error, handleScroll, fetchData };
 }

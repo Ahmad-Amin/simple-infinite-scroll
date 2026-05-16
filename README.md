@@ -1,57 +1,48 @@
 # useInfiniteScroll Hook
-`useInfiniteScroll` is a custom React hook that simplifies the implementation of infinite scrolling functionality in React applications. This hook utilizes `Axios`	for fetching data and `Lodash`'s debounce method to efficiently manage API request frequency. It is designed to be flexible, supporting both authenticated and unauthenticated requests, which makes it suitable for a wide range of API scenarios.
+`useInfiniteScroll` is a custom React hook that simplifies the implementation of infinite scrolling functionality in React applications. This hook uses `Axios` for fetching data and `Lodash`'s debounce to efficiently manage API request frequency. It supports authenticated and unauthenticated requests, custom headers, search queries, and automatic pagination.
 
 ## Features
 - **Infinite Scrolling**: Automatically loads new data as the user scrolls, improving user experience in content-heavy applications
-- **Debounced API Requests**: Uses Lodash's debounce to control the rate of API requests, which helps in reducing the number of calls made to the server under rapid scroll conditions and also have the functionality of `search` (if it is supporting by your API)
-- **Flexible API Request Configuration**: Can handle custom headers and authentication tokens, accommdating both public and secured APIs
-- **Pagination and Error handling**: Manages pagniation seamlessly and provides build-in error handling.
+- **Debounced API Requests**: Uses Lodash's debounce to control the rate of API requests, reducing server calls under rapid scroll conditions and supporting search functionality
+- **Flexible API Request Configuration**: Handles custom headers and authentication tokens, accommodating both public and secured APIs
+- **Pagination and Error Handling**: Manages pagination seamlessly and provides built-in error handling with automatic reset on search/dependency changes
 
 ## Installation
-To use `useInfiniteScroll`, make sure you have `axios` and `lodash` installed in your porject. If not, install them using npm:
+Make sure you have `axios` and `lodash` installed in your project. If not, install them:
 ```bash
 npm install axios lodash
 ```
-After installing `axios` and `lodash`. Install the package by using this command (typescript version should be **>4.0.5 & <5.0.0**
+Then install the package:
 ```bash
 npm install use-component-infinite-scroll
 ```
-if you have some other version of typescript. You can install the package using this command
-```bash
-npm install use-component-infinite-scroll --legacy-peer-deps
-```
 
 ## Usage
-Below is the basic example to demonstrate how to use the `useInfiniteScroll` hook in a React Component
+Basic example showing how to use `useInfiniteScroll` in a React component:
 
-```bash
-import React, { useEffect } from 'react'
-import { useInfiniteScroll } from  'use-component-infinite-scroll';
+```tsx
+import React from 'react'
+import { useInfiniteScroll } from 'use-component-infinite-scroll';
 
 const App = () => {
   const fetchUrl = "https://api.example.com/data"
 
-  const { listRef, data, loading, error, handleScroll } = useInfiniteScroll({
+  const { listRef, data, loading, error, handleScroll, fetchData } = useInfiniteScroll({
     url: fetchUrl,
     limit: 10,
-    dependency: "id" // like the id  of parent record or any other dependency (optional)
+    dependency: "id", // re-fetches when this value changes (optional)
     authToken: "your_auth_token", // optional
     headers: { "Custom-Header": "value" }, // optional
   });
 
-  // IMP, this is to trigger the hook to fetch the record
-  useEffect(() => {
-   fetchData("", fetchUrl)
-  }, [fetchUrl, fetchData])
-
-  // This function is to handle the API search functionality and lodash (default delay time is 500 millisecond)
+  // Trigger a search — debounced by default (500 ms)
   const handleSearch = (value: string) => {
-    fetchData(value, fetchUrl)
+    fetchData(value, fetchUrl);
   };
 
   return (
-    <div ref={listRef} onScroll={handleScroll}>
-      {data.map((item, index) => (
+    <div ref={listRef} onScroll={handleScroll} style={{ overflowY: "auto", height: "500px" }}>
+      {data.map((item: any, index) => (
         <div key={index}>{item.title}</div>
       ))}
       {loading && <p>Loading more items...</p>}
@@ -59,33 +50,47 @@ const App = () => {
     </div>
   );
 }
-
 ```
 
+> **Note:** The scrollable container must have a fixed height and `overflow-y: auto` (or `scroll`) for `handleScroll` to work correctly.
+
 ## Hook Props
-The `useInfiniteScroll` hook accepts the following properties
+The `useInfiniteScroll` hook accepts the following properties:
 
-| Property      | Type   | Description                                                | Default |
-|---------------|--------|------------------------------------------------------------|---------|
-| url           | string | The URL of the API endpoint.                               |         |
-| limit         | number | Number of items to fetch per page.                         |   10    |
-| initialData   | array  | Initial data to populate the list.                         |   []    |
-| dependency    | any    | Dependency for re-triggering the data fetch.               |         |
-| searchQuery   | string | Query parameter to pass with the API request for searching |         |
-| debounceDelay | number | Time in milliseconds for debounce.                         |   500   |
-| authToken     | string | Authorization token for making authenticated requests.     |         |
-| headers       | object | Custom headers to send with the API request.               |   {}    |
-
+| Property      | Type   | Required | Description                                                | Default |
+|---------------|--------|----------|------------------------------------------------------------|---------|
+| url           | string | Yes      | The URL of the API endpoint.                               |         |
+| limit         | number | No       | Number of items to fetch per page.                         | 10      |
+| initialData   | array  | No       | Initial data to populate the list.                         | []      |
+| dependency    | any    | No       | When this value changes, data resets and re-fetches.       |         |
+| searchQuery   | string | No       | Default search query passed with API requests.             | ""      |
+| debounceDelay | number | No       | Debounce delay in milliseconds.                            | 500     |
+| authToken     | string | No       | Bearer token for authenticated requests.                   |         |
+| headers       | object | No       | Additional headers to send with every request.             | {}      |
 
 ## Return Values
-The hook returns an bject containing the following:
+The hook returns an object containing the following:
 
+| Name          | Type                                  | Description                                                   |
+|---------------|---------------------------------------|---------------------------------------------------------------|
+| `listRef`     | `React.RefObject<HTMLDivElement>`     | Attach to the scrollable container element.                   |
+| `data`        | `T[]`                                 | The data fetched from the API.                                |
+| `loading`     | `boolean`                             | `true` while a request is in-flight.                          |
+| `error`       | `string \| null`                      | Error message if the last request failed, otherwise `null`.   |
+| `handleScroll`| `() => void`                          | Attach to the container's `onScroll` event.                   |
+| `fetchData`   | `(query?: string, url?: string) => void` | Manually trigger a fetch (e.g., on search input change).   |
 
--   `listRef` (React ref): Reference to the scrolling container.
--   `data` (array): The data fetched from the API.
--   `loading` (boolean): Indicates whether the data is currently being fetched.
--   `error` (string|null): Error message if an error occurred during fetching.
--   `handleScroll` (function): Function to call on scroll to fetch more data.
+## API Response Format
+Your API must return the following shape for pagination to work:
+
+```json
+{
+  "results": [...],
+  "pagination": {
+    "totalPages": 5
+  }
+}
+```
 
 ## Contributing
 Contributions are warmly welcomed! Please feel free to submit pull requests or create issues for any bugs and feature requests.

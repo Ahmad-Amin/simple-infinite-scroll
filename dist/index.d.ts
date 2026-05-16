@@ -3,7 +3,7 @@ interface UseInfiniteScrollProps<T> {
     url: string;
     limit?: number;
     initialData?: T[];
-    dependency: any;
+    dependency?: any;
     searchQuery?: string;
     debounceDelay?: number;
     authToken?: string;
@@ -15,6 +15,6 @@ export declare function useInfiniteScroll<T>({ url, limit, initialData, dependen
     loading: boolean;
     error: string | null;
     handleScroll: () => void;
-    fetchData: (query?: string, url?: string) => void;
+    fetchData: (query?: string, fetchUrl?: string) => void;
 };
 export {};
